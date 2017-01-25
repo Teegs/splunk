@@ -1,3 +1,31 @@
+mkdir $SPLUNK_HOME/etc/auth/mycerts
+# cd $SPLUNK_HOME/etc/auth/mycerts
+
+##Generate a private key for your root certificate##
+
+## 1. Create a key to sign your certificates.
+
+openssl genrsa -des3 -out myCAPrivateKey.key 2048
+
+## 2. When prompted, create a password for the key.
+
+##When the step is completed, the private key myCAPrivateKey.key appears in your directory
+
+##Generate and sign the certificate##
+#1. Generate a new Certificate Signing Request (CSR):
+
+openssl req -new -key myCAPrivateKey.key -out myCACertificate.csr
+
+#2. When prompted, enter the password you created for the private key in $SPLUNK_HOME/etc/auth/mycerts/myCAPrivateKey.key.
+
+#3. Provide the requested certificate information, including the common name if you plan to use common name checking in your Splunk configuration.
+
+#A new CSR myCACertificate.csr appears in your directory.
+
+#4. Use the CSR myCACertificate.csr to generate the public certificate:
+
+openssl x509 -req -in myCACertificate.csr -sha256 -signkey myCAPrivateKey.key -CAcreateseria
+
 Indexers
 
 make certificates as you would for SplunkWeb.
