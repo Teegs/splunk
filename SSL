@@ -1,0 +1,49 @@
+Indexers
+
+make certificates as you would for SplunkWeb.
+$ cd /opt/splunk/etc/auth/mycerts
+$ openssl req -nodes -newkey rsa:2048 -keyout splunkidx01.key -out splunk-idx01.csr
+$ openssl req -nodes -newkey rsa:2048 –keyout splunk-idx01.web.key -out splunk-srv1.csr
+$ openssl rsa -in splunk-idx01.web.key -des3 –out splunk-idx01.key
+To make the Indexer formatted .PEM:
+$ cat splunk-idx01.crt splunk-idx01.key cacert.crt > splunk-idx01.pem
+
+The Indexer - Inputs.conf
+
+vi $SPLUNK_HOME/etc/system/local/inputs.conf
+[splunktcp-ssl://9998]
+disabled = 0
+
+[SSL]
+password = <REDACTED>
+rootCA = /opt/splunk/etc/auth/MYCERTS/forwarder/cacert.crt
+serverCert = /opt/splunk/etc/auth/MYCERTS/forwarder/splunk-idx01.pem
+sslVersions = tls1.2, -tls1.0
+cipherSuite = ?
+requireClientCert = true|false
+
+The Forwarder 
+
+make certificates as you would for SplunkWeb
+This can be done on your deployment server.
+$ cd /opt/splunk/etc/auth/MYCERTS/forwarders
+$ openssl req -nodes -newkey rsa:2048 -keyout splunk-forwarder.web.key -out splunk-forwarder.csr
+On forwarders only, make the key password "password" 
+$ openssl rsa -in splunk-forwarder.web.key -des3 -out splunkforwarder.key
+delete splunk-forwarder.web.key
+$ cat splunk-forwarder.csr splunkscforwarder.key CA_38.crt > splunkforwarder.pem
+Copy the splunk-forwarder.pem and cacert.crt to your Forwarder(s)
+
+Forwarder to Indexer - Outputs.conf
+
+vi /opt/splunk/etc/system/local/outputs.conf
+
+[tcpout]
+defaultGroup = myIndexers
+[tcpout:myIndexers]
+server = splunk-idx01.myorg.com:9998
+sslCertPath = /opt/splunk/etc/auth/MYCERTS/forwarders /splunk-forwarder.pem
+sslPassword = password # For Reasons
+sslRootCAPath = /opt/splunk/etc/auth/MYCERTS/cacert.crt
+sslVerifyServerCert = true
+sslCommonNameToCheck = splunk-idx01.myorg.com
