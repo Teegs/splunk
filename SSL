@@ -1,32 +1,61 @@
+## Make a directory for new certificates ##
+
 mkdir $SPLUNK_HOME/etc/auth/mycerts
 # cd $SPLUNK_HOME/etc/auth/mycerts
 
+###Create the root certificate for self signed certificates## 
+##First create a root certificate that serves as the root certificate authority##
+##This root CA to sign the server certificates that you generate and distribute to your Splunk instances.##
+
 ##Generate a private key for your root certificate##
 
-## 1. Create a key to sign your certificates.
+## 1. Create a private key to sign your certificates.
 
 openssl genrsa -des3 -out myCAPrivateKey.key 2048
 
 ## 2. When prompted, create a password for the key.
 
-##When the step is completed, the private key myCAPrivateKey.key appears in your directory
+##When the step is completed, the private key myCAPrivateKey.key appears in your directory##
+
+///check your work//
+//pwd $SPLUNK_HOME/etc/auth/mycerts//
+//ls myCAPrivateKey.key//
 
 ##Generate and sign the certificate##
-#1. Generate a new Certificate Signing Request (CSR):
+#3. Generate a new Certificate Signing Request (CSR)#
 
 openssl req -new -key myCAPrivateKey.key -out myCACertificate.csr
 
-#2. When prompted, enter the password you created for the private key in $SPLUNK_HOME/etc/auth/mycerts/myCAPrivateKey.key.
+#4. When prompted, enter the password you created for the private key in $SPLUNK_HOME/etc/auth/mycerts/myCAPrivateKey.key #
 
-#3. Provide the requested certificate information, including the common name if you plan to use common name checking in your Splunk configuration.
+#5. Provide the requested certificate information, including the common name if you plan to use common name checking in your Splunk configuration.
 
-#A new CSR myCACertificate.csr appears in your directory.
+          #A new CSR myCACertificate.csr appears in your directory#
 
-#4. Use the CSR myCACertificate.csr to generate the public certificate:
+#6. Use the CSR myCACertificate.csr to generate the public certificate#
 
-openssl x509 -req -in myCACertificate.csr -sha256 -signkey myCAPrivateKey.key -CAcreateseria
+openssl x509 -req -in myCACertificate.csr -sha256 -signkey myCAPrivateKey.key -CAcreateserial -out myCACertificate.pem -days 1095
 
-Indexers
+#7. When prompted, enter the password for the private key myCAPrivateKey.key#
+
+#A new file myCACertificate.pem appears in your directory. This is the public CA certificate that you will distribute to your Splunk instances.#
+
+
+//check your work//
+//pwd $SPLUNK_HOME/etc/auth/mycerts
+//ls myCAPrivateKey.key myCACertificate.csr myCACertificate.pem//
+// myCAPrivateKey.key=private key myCACertificate.csr = CSR myCACertificate.pem =public CA distributated to your splunk instances//
+
+##Create the server certificate##
+Now that you have created a root certificate to serve as your CA, you must create and sign your server certificate.
+
+##Important: This example shows you how to create a new private key and server certificate. You can distribute this server certificate to all forwarders, indexers as well your Splunk instances that communicate on the management port. If you want to use a different common names for each instance, you simply repeat the process described here to create different certificates (each with a different common name) for your Splunk instances.##
+
+##For example, if configuring multiple forwarders, you can use the following example to create the certificate myServerCertificate.pem for your indexer, then create another certificate myForwarderCertificate.pem using the same root CA and install that certificate on your forwarder.##
+//Note that an indexer will only accept a properly generated and configured certificate from a forwarder that is signed by the same root CA//
+
+##See "Configure Splunk forwarding to use your own certificates" for more information about configuring your forwarders and indexers.
+Indexers##
 
 make certificates as you would for SplunkWeb.
 $ cd /opt/splunk/etc/auth/mycerts
